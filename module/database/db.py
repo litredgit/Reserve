@@ -27,12 +27,8 @@ class get_db:
             self.conn.commit()
         
     def execm(self, command:str, list:list):
-        if list == self.elist:
-            self.cursor.executemany(command)
-            self.conn.commit()
-        else:
-            self.cursor.executemany(command, list)
-            self.conn.commit()
+        self.cursor.executemany(command, list)
+        self.conn.commit()
     
     def create_table(self, table_name: str):
         statement =f'''CREATE TABLE IF NOT EXISTS {table_name}
