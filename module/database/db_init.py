@@ -1,7 +1,8 @@
-import sqlite3
 import db
 
-def db_path()  -> str:
-    database_path = input(f"select a path for database reserve.db")
-    return database_path
-database_path = db_path()
+with db.get_db() as initdb:
+    initdb.create_table('users')
+    print(f"create db")
+    initdb.create_table('orbi')
+    initdb.add_column('users')
+    initdb.add_column('orbi')
