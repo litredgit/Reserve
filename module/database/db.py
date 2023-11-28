@@ -1,12 +1,14 @@
-import sqlite3
-import settings
+import sqlite3, json
 
+with open('D:/Works/Git demo/db/settings.json', 'r') as f:
+    db_path = json.load(f)['db_path']
+    
 class get_db:
     def __init__(self) -> str:
         self.elist = [0]
 
     def __enter__(self):
-        self.conn = sqlite3.connect(settings.db_path)
+        self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
         print("connect db")
         return self
@@ -82,7 +84,7 @@ class get_db:
         
 request_info = {
             'user': 'pxy',
-            'table': 'orbi',
+            'table': 'orbi23',
             'date': 231128,
             'ct':{'t1':'t9_10',
                    't2':'t10_11',
