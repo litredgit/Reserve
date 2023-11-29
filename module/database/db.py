@@ -1,13 +1,11 @@
-import sqlite3, json, os
+import sqlite3, json
 
-_path = os.path.abspath(__file__)
-for i in range(3):
-    _path = os.path.dirname(_path)
-settings_path = os.path.join(_path, 'database', 'settings.json')
+def get_settings() -> str:
+    with open("settings.json", "r") as f:
+        settings = json.load(f)
+    return settings
+db_path = get_settings()['db_path']
 
-with open('D:/Works/Git demo/db/settings.json', 'r') as f:
-    db_path = json.load(f)['db_path']
-    
 class get_db:
     def __init__(self) -> str:
         self.elist = [0]
