@@ -1,8 +1,11 @@
 import sqlite3, json
 
-with open('D:/Works/Git demo/db/settings.json', 'r') as f:
-    db_path = json.load(f)['db_path']
-    
+def get_settings() -> str:
+    with open("settings.json", "r") as f:
+        settings = json.load(f)
+    return settings
+db_path = get_settings()['db_path']
+
 class get_db:
     def __init__(self) -> str:
         self.elist = [0]
