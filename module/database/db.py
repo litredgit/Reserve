@@ -58,10 +58,10 @@ class get_db:
                 self.exec(statement, self.elist)
         print(f"add column")
         
-    def insert(self, rownames: list, table_name, column):
+    def insert_row(self, rownames: list, table_name, column):
         statement = f"INSERT INTO {table_name} ({column}) VALUES (?)"
         self.execm(statement, rownames)
-        print(f"insert {rownames[0]} to {rownames[-1]}")
+        print(f"insert {rownames[0]} to {rownames[-1]} into table:{table_name}")
             
     def check_available(self, request_info:dict) -> dict:
         check_info = [(request_info['table'], request_info['date'])]
