@@ -1,5 +1,4 @@
-import os, json
-import db
+from . import db
 
 with db.get_db() as initdb:
     initdb.create_table('users')
