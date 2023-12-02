@@ -1,4 +1,4 @@
-import sqlite3, json
+import sqlite3, json, calendar
 
 def get_settings() -> str:
     with open("settings.json", "r") as f:
@@ -8,8 +8,8 @@ db_path = get_settings()['db_path']
 
 class get_db:
     def __init__(self) -> str:
-        self.elist = [0]
-
+        pass
+    
     def __enter__(self):
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
@@ -21,84 +21,77 @@ class get_db:
         self.conn.close()
         print("close db")
     
-    def exec(self, command:str, list:list):
-        if list == self.elist:
-            self.cursor.execute(command)
-            self.conn.commit()
-        else:
-            self.cursor.execute(command, list)
-            self.conn.commit()
+    def exec(self, command:str, list:list = []):
+        self.cursor.execute(command, list)
+        self.conn.commit()
         
-    def execm(self, command:str, list:list):
+    def execm(self, command:str, list:list = []):
         self.cursor.executemany(command, list)
         self.conn.commit()
     
-    def create_table(self, table_name: str):
+    def create_table(self, table_name:str):
         statement =f'''CREATE TABLE IF NOT EXISTS {table_name}
                   (id INTEGER PRIMARY KEY)'''
-        self.exec(statement, self.elist)
+        self.exec(statement)
         print(f"create db.table: {table_name}")
     
-    def set_time(self) -> list:
-        column_name = ['date', 'before9']
-        for i in range(9,21):
-            j = i + 1
-            column_name.append(f't{i}_{j}')
-        column_name.append('after21')
-        return column_name
-        
-    def add_column(self, table_name:str):
-        column_name =self.set_time()
-        if table_name == 'users':
-            statement = f"ALTER TABLE {table_name} ADD COLUMN 'name' TEXT;"
-            self.exec(statement, self.elist)
+    def conv_list(self, list:list, user_name:str="") -> list:
+        if user_name == "":
+            list = [(x,) for x in list]
         else:
-            for name in column_name:
-                statement = f"ALTER TABLE {table_name} ADD COLUMN {name} TEXT;"
-                self.exec(statement, self.elist)
-        print(f"add column")
+            list = [(user_name, x) for x in list]
+        return list
         
-    def insert_row(self, rownames: list, table_name, column):
+    def add_column(self, table_name:str, column_name:list):
+        print(f"add column: {column_name[0]} to {column_name[-1]} into table: {table_name}")
+        for name in column_name:
+            statement = f"ALTER TABLE {table_name} ADD COLUMN {name} TEXT;"
+            self.exec(statement)
+        
+    def insert_row(self, rows: list, table_name, column):
+        print(f"insert {rows[0]} to {rows[-1]} into table: {table_name}")
+        rows = self.conv_list(rows)
         statement = f"INSERT INTO {table_name} ({column}) VALUES (?)"
-        self.execm(statement, rownames)
-        print(f"insert {rownames[0]} to {rownames[-1]} into table:{table_name}")
+        self.execm(statement, rows)
             
     def check_available(self, request_info:dict) -> dict:
-        check_info = [(request_info['table'], request_info['date'])]
-        statement = f"SELECT * FROM ? WHERE 'date' = ?"
-        self.exec(statement, check_info)
+        statement = f"SELECT time, {request_info['date']} FROM {request_info['table']}"
+        self.exec(statement)
         rows = self.cursor.fetchall()
-        output = []
+        output = {}
         for row in rows:
-            print(row)
-            
-        return self
+            output[row[0]] = row[1]
+        return output
         
     def reserve(self, request_info:dict) -> dict:
-        for key in request_info['rt']:
-            reserve_info = [request_info['user'], request_info['date']]
-            statement = f"UPDATE {request_info['table']} SET {request_info['rt'][key]} = ? WHERE date = ?"
-            self.exec(statement, reserve_info)
+        rt = self.conv_list(request_info['rt'], request_info['user'])
+        statement = f"UPDATE {request_info['table']} SET {request_info['date']} = ? WHERE time = ?"
+        self.execm(statement, rt)
         print(f"reserve done")    
+
+class maintain(get_db):
+    def __init__(self) -> str:
+        pass
         
-request_info = {
-            'user': 'pxy',
-            'table': 'orbi23',
-            'date': 231128,
-            'ct':{'t1':'t9_10',
-                   't2':'t10_11',
-                   },
-            'rt': {'t1':'t9_10',
-                   't2':'t10_11',
-                   }
-        }
-user_name = [('crs',)]
-date = [(231128,)]
-
-
-with get_db() as test:
-    #test.insert(user_name, 'users', 'name')
-    #test.insert(date, 'orbi', 'date')
-    #test.reserve(request_info)
-    #test.create_table('orbi')
-    pass
+    def set_time(self) -> list:
+        rows = ['before9']
+        for i in range(9,21):
+            j = i + 1
+            rows.append(f't{i}_{j}')
+        rows.append('after21')
+        return rows
+    
+    def set_date(self, year:int) -> list:
+        calendar.setfirstweekday(calendar.MONDAY)
+        days = [calendar.monthrange(year, month)[1] for month in range(1, 13)]
+        dates = [f"{calendar.month_abbr[month]}{str(day).zfill(2)}" for month, days in enumerate(days, start=1) for day in range(1, days+1)]
+        return dates
+    
+    def user_table(self):
+        self.create_table('users')
+        self.add_column('users', ['name'])
+        
+    def instru_table(self, instru_name:str, year:int):
+        self.create_table(instru_name)
+        self.add_column(instru_name, ['time']+self.set_date(year))
+        self.insert_row(self.set_time(), instru_name, 'time')
